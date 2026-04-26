@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn loop dashboard</title>
+<!--
+  THE LINKEDIN LOOP — LIVE DASHBOARD
+  Install as a Cowork live artifact:
+    1. Open Cowork
+    2. Ask: "Create a live artifact from this HTML"
+    3. Paste this whole file
+    4. Approve mcp__neuralflow__read_note + mcp__neuralflow__list_recent_notes when prompted
+
+  TO CUSTOMIZE FOR YOUR VAULT:
+  Edit the VAULT_FOLDER constant near the top of the JS at the bottom.
+-->
+<style>
+:root {
+  color-scheme: light;
+  --brand-orange: #F26B3A;
+  --brand-orange-dark: #D85A30;
+  --brand-navy: #0A2540;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.5; color: var(--text-primary); background: #FAFAF9; }
+.ll-root { max-width: 1200px; margin: 0 auto; }
+.ll-header { display: flex; align-items: flex-start; justify-content: space-between; margin: 0 0 1.25rem; gap: 16px; }
+.ll-title-block { display: flex; align-items: flex-start; gap: 12px; }
+.ll-title-bar { width: 5px; height: 42px; background: var(--brand-orange); border-radius: 2px; flex-shrink: 0; margin-top: 4px; }
+.ll-title-text h1 { font-size: 26px; font-weight: 500; margin: 0; color: var(--brand-navy); letter-spacing: -0.01em; }
+.ll-title-text p { font-size: 14px; color: var(--text-secondary); margin: 6px 0 0; }
+.ll-btn { background: #fff; border: 0.5px solid var(--border-strong); color: var(--text-primary); padding: 9px 16px; font-size: 13px; border-radius: 8px; cursor: pointer; font-family: inherit; transition: background 0.15s, transform 0.05s, border-color 0.15s, box-shadow 0.15s; }
+.ll-btn:hover { background: #f9fafb; border-color: #9ca3af; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.ll-btn:active { transform: scale(0.98); }
+.ll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ll-btn.primary { background: var(--brand-orange); color: #fff; border-color: var(--brand-orange); font-weight: 500; }
+.ll-btn.primary:hover { background: var(--brand-orange-dark); border-color: var(--brand-orange-dark); }
+.ll-btn.btn-blue { background: #EFF6FF; color: #1E40AF; border-color: #BFDBFE; }
+.ll-btn.btn-blue:hover { background: #DBEAFE; border-color: #93C5FD; }
+.ll-btn.btn-green { background: #F0FDF4; color: #15803D; border-color: #BBF7D0; }
+.ll-btn.btn-green:hover { background: #DCFCE7; border-color: #86EFAC; }
+.ll-btn.btn-amber { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+.ll-btn.btn-amber:hover { background: #FEF3C7; border-color: #FCD34D; }
+.ll-btn.btn-orange-ghost { background: #FFF7ED; color: #9A3412; border-color: #FED7AA; }
+.ll-btn.btn-orange-ghost:hover { background: #FFEDD5; border-color: #FDBA74; }
+.ll-btn.sm { padding: 6px 12px; font-size: 12px; }
+.ll-btn.copied { background: #DCFCE7; color: #15803D; border-color: #5BAF6F; }
+
+.ll-banner { background: #FEF3C7; border: 0.5px solid #F59E0B; border-radius: 8px; padding: 10px 16px; margin: 0 0 1rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; color: #92400E; }
+.ll-banner strong { color: #78350F; font-weight: 500; }
+.ll-banner.hidden { display: none; }
+
+.ll-today { border: 1.5px solid var(--brand-orange); background: linear-gradient(135deg, #FFFCF8 0%, #FFF7ED 100%); border-radius: 12px; padding: 20px 24px; margin: 0 0 1.5rem; box-shadow: 0 4px 14px rgba(242, 107, 58, 0.08); }
+.ll-today-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+.ll-today-head h2 { font-size: 18px; font-weight: 500; margin: 0; color: var(--brand-navy); display: flex; align-items: center; gap: 8px; }
+.ll-today-head h2::before { content: ""; width: 8px; height: 8px; background: var(--brand-orange); border-radius: 50%; }
+.ll-today-day { font-size: 12px; color: var(--brand-orange); font-weight: 500; padding: 3px 10px; background: #FFEDD5; border-radius: 12px; }
+.ll-today-hook { font-size: 22px; font-weight: 500; color: var(--brand-navy); line-height: 1.3; margin: 0 0 14px; padding: 12px 16px; background: #fff; border-radius: 8px; border: 0.5px solid var(--border); }
+.ll-today-section { margin-bottom: 14px; }
+.ll-today-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ll-today-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.ll-today-text { background: #fff; border: 0.5px solid var(--border); border-radius: 6px; padding: 12px 14px; font-size: 13px; line-height: 1.5; color: var(--text-primary); white-space: pre-wrap; max-height: 240px; overflow-y: auto; font-family: inherit; }
+.ll-today-text.compact { max-height: 110px; }
+.ll-today-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--border); }
+.ll-today-empty { text-align: center; padding: 24px 16px; color: var(--text-tertiary); font-size: 13px; }
+
+.ll-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0 0 1.5rem; }
+.ll-metric { background: #f9fafb; border-radius: 12px; padding: 18px 22px; border-top: 3px solid transparent; transition: transform 0.1s, box-shadow 0.15s; }
+.ll-metric:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.ll-metric-label { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; font-weight: 500; }
+.ll-metric-value { font-size: 32px; font-weight: 500; margin: 0; line-height: 1; color: var(--text-primary); }
+.ll-metric-sub { font-size: 12px; color: var(--text-tertiary); margin: 8px 0 0; }
+.ll-metric.tint-blue { background: #EFF6FF; border-top-color: #3B82F6; } .ll-metric.tint-blue .ll-metric-label { color: #1E40AF; }
+.ll-metric.tint-green { background: #F0FDF4; border-top-color: #22C55E; } .ll-metric.tint-green .ll-metric-label { color: #15803D; }
+.ll-metric.tint-orange { background: #FFF7ED; border-top-color: var(--brand-orange); } .ll-metric.tint-orange .ll-metric-label { color: #9A3412; }
+.ll-metric.tint-amber { background: #FFFBEB; border-top-color: #F59E0B; } .ll-metric.tint-amber .ll-metric-label { color: #B45309; }
+.ll-metric.warn { background: #FEF3C7; border-top-color: #F59E0B; } .ll-metric.warn .ll-metric-value { color: #B45309; } .ll-metric.warn .ll-metric-sub { color: #B45309; font-weight: 500; }
+
+.ll-card { background: #fff; border: 0.5px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 0 0 1.25rem; border-left-width: 4px; border-left-style: solid; border-left-color: var(--border); transition: box-shadow 0.15s; }
+.ll-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.ll-card h3 { font-size: 17px; font-weight: 500; margin: 0 0 14px; color: var(--brand-navy); display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ll-card h3 .ll-card-meta { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+.ll-card h3::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--card-dot, var(--text-tertiary)); margin-right: 8px; vertical-align: middle; flex-shrink: 0; }
+.ll-card.accent-blue { border-left-color: #3B82F6; --card-dot: #3B82F6; } .ll-card.accent-blue h3 { color: #1E40AF; }
+.ll-card.accent-orange { border-left-color: var(--brand-orange); --card-dot: var(--brand-orange); } .ll-card.accent-orange h3 { color: #9A3412; }
+.ll-card.accent-teal { border-left-color: #14B8A6; --card-dot: #14B8A6; } .ll-card.accent-teal h3 { color: #0F766E; }
+.ll-card.accent-green { border-left-color: #22C55E; --card-dot: #22C55E; } .ll-card.accent-green h3 { color: #15803D; }
+.ll-card.accent-purple { border-left-color: #8B5CF6; --card-dot: #8B5CF6; } .ll-card.accent-purple h3 { color: #6D28D9; }
+.ll-card.accent-navy { border-left-color: var(--brand-navy); --card-dot: var(--brand-navy); }
+
+.ll-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+.ll-day { background: #f9fafb; border-radius: 10px; padding: 14px 8px; text-align: center; color: var(--text-secondary); transition: transform 0.1s; }
+.ll-day:hover { transform: translateY(-1px); }
+.ll-day-name { font-size: 12px; font-weight: 500; opacity: 0.95; margin: 0 0 6px; letter-spacing: 0.5px; }
+.ll-day-pillar { font-size: 11px; opacity: 0.8; margin: 0 0 12px; line-height: 1.3; min-height: 30px; font-weight: 500; }
+.ll-day-status { font-size: 12px; font-weight: 500; padding: 4px 6px; border-radius: 5px; background: rgba(255,255,255,0.65); color: var(--text-secondary); }
+.ll-day-status.done { background: #065F46; color: #ECFDF5; }
+
+.pillar-p5 { background: #CCFBF1; color: #0F766E; }
+.pillar-p1 { background: #DBEAFE; color: #1E40AF; }
+.pillar-cc { background: #FFEDD5; color: #9A3412; box-shadow: inset 0 0 0 1px rgba(242,107,58,0.35); }
+.pillar-p3 { background: #EDE9FE; color: #6D28D9; }
+.pillar-p4 { background: #DCFCE7; color: #15803D; }
+.pillar-personal { background: #F3F4F6; color: #4B5563; }
+
+.ll-three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+.ll-list { font-size: 13px; }
+.ll-list-item { padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+.ll-list-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ll-list-item:first-child { padding-top: 0; }
+.ll-item-title { font-weight: 500; margin: 0 0 4px; line-height: 1.4; color: var(--text-primary); }
+.ll-item-meta { font-size: 12px; color: var(--text-secondary); margin: 0; }
+.ll-sweep-row { display: flex; align-items: baseline; gap: 8px; }
+.ll-sweep-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; flex-shrink: 0; }
+.ll-ccw-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ll-ccw-row .ll-item-title { flex: 1; margin: 0; }
+.ll-ccw-mark { flex-shrink: 0; padding: 4px 9px; font-size: 11px; opacity: 0.55; transition: opacity 0.15s; background: #FFF7ED; color: #9A3412; border: 0.5px solid #FED7AA; border-radius: 5px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.ll-ccw-row:hover .ll-ccw-mark { opacity: 1; }
+.ll-ccw-mark:hover { background: #FFEDD5; border-color: #FDBA74; }
+.ll-ccw-mark:active { transform: scale(0.96); }
+
+.ll-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 500; margin-right: 6px; vertical-align: 1px; }
+.ll-badge.day-mon { background: #CCFBF1; color: #0F766E; }
+.ll-badge.day-tue { background: #DBEAFE; color: #1E40AF; }
+.ll-badge.day-wed { background: #FFEDD5; color: #9A3412; }
+.ll-badge.day-thu { background: #EDE9FE; color: #6D28D9; }
+.ll-badge.day-fri { background: #DCFCE7; color: #15803D; }
+.ll-badge.day-sat { background: #DBEAFE; color: #1E40AF; }
+.ll-badge.day-sun { background: #F3F4F6; color: #4B5563; }
+.ll-badge.day-auto { background: #F3F4F6; color: #6b7280; }
+.ll-badge.ccw { background: #FFEDD5; color: #9A3412; font-variant-numeric: tabular-nums; }
+
+.ll-perf-aggregate { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.ll-perf-mini { border-radius: 8px; padding: 12px 14px; border-left: 3px solid transparent; }
+.ll-perf-mini.tint-1 { background: #EFF6FF; border-left-color: #3B82F6; } .ll-perf-mini.tint-1 .ll-perf-mini-label { color: #1E40AF; }
+.ll-perf-mini.tint-2 { background: #F0FDF4; border-left-color: #22C55E; } .ll-perf-mini.tint-2 .ll-perf-mini-label { color: #15803D; }
+.ll-perf-mini.tint-3 { background: #FFFBEB; border-left-color: #F59E0B; } .ll-perf-mini.tint-3 .ll-perf-mini-label { color: #B45309; }
+.ll-perf-mini.tint-4 { background: #FAF5FF; border-left-color: #8B5CF6; } .ll-perf-mini.tint-4 .ll-perf-mini-label { color: #6D28D9; }
+.ll-perf-mini-label { font-size: 11px; margin: 0 0 4px; font-weight: 500; }
+.ll-perf-mini-value { font-size: 22px; font-weight: 500; margin: 0; color: var(--text-primary); line-height: 1; }
+.ll-perf-mini-sub { font-size: 10px; color: var(--text-tertiary); margin: 4px 0 0; }
+
+.ll-perf-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ll-perf-table th { text-align: left; padding: 8px 10px; color: var(--text-secondary); font-weight: 500; border-bottom: 0.5px solid var(--border); white-space: nowrap; background: #FAFAF9; }
+.ll-perf-table td { padding: 10px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+.ll-perf-table tr:last-child td { border-bottom: none; }
+.ll-perf-table tr.clickable { cursor: pointer; transition: background 0.1s; }
+.ll-perf-table tr.clickable:hover { background: #FFF7ED; }
+.ll-perf-table .ll-perf-title { color: var(--text-primary); font-weight: 500; line-height: 1.3; }
+.ll-perf-table .ll-perf-num { font-variant-numeric: tabular-nums; text-align: right; }
+.ll-perf-grade { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+.ll-perf-grade.aplus { background: #DCFCE7; color: #15803D; }
+.ll-perf-grade.bplus { background: #DBEAFE; color: #1E40AF; }
+.ll-perf-grade.c { background: #F3F4F6; color: #4B5563; }
+.ll-perf-grade.bomb { background: #FECACA; color: #B91C1C; }
+.ll-perf-grade.pending { background: #FEF3C7; color: #92400E; }
+.ll-perf-hint { font-size: 11px; color: var(--text-tertiary); font-style: italic; margin: 8px 0 0; text-align: right; }
+
+.ll-growth-legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 0 0 12px; font-size: 12px; color: var(--text-secondary); }
+.ll-growth-legend-item { display: flex; align-items: center; gap: 6px; }
+.ll-growth-legend-swatch { width: 14px; height: 4px; border-radius: 2px; }
+.ll-growth-wrap { position: relative; width: 100%; height: 280px; }
+.ll-growth-empty { background: linear-gradient(135deg, #EFF6FF 0%, #FAFAFF 100%); border: 1px dashed #BFDBFE; border-radius: 10px; padding: 32px 24px; text-align: center; color: #1E40AF; font-size: 13px; line-height: 1.5; }
+.ll-growth-empty strong { color: #1E3A8A; display: block; font-weight: 500; margin-bottom: 4px; font-size: 15px; }
+
+.ll-patterns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.ll-patterns-section h4 { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.ll-patterns-section h4::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #8B5CF6; }
+.ll-hook-list { display: flex; flex-direction: column; gap: 8px; }
+.ll-hook-row { display: grid; grid-template-columns: 110px 1fr 60px; gap: 10px; align-items: center; font-size: 12px; }
+.ll-hook-name { color: var(--text-primary); font-weight: 500; text-transform: capitalize; }
+.ll-hook-bar-bg { background: #F3F4F6; border-radius: 4px; height: 10px; overflow: hidden; }
+.ll-hook-bar { background: linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%); height: 100%; transition: width 0.3s; }
+.ll-hook-rate { font-variant-numeric: tabular-nums; text-align: right; color: var(--text-secondary); }
+
+.ll-dow-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.ll-dow-cell { border-radius: 8px; padding: 12px 6px; text-align: center; transition: transform 0.1s; border: 0.5px solid transparent; }
+.ll-dow-cell:hover { transform: translateY(-1px); }
+.ll-dow-name { font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: 0.4px; }
+.ll-dow-rate { font-size: 18px; font-weight: 500; line-height: 1; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.ll-dow-count { font-size: 10px; opacity: 0.7; }
+
+.ll-empty-card { background: linear-gradient(135deg, #FAF5FF 0%, #F5F3FF 100%); border: 1px dashed #DDD6FE; border-radius: 8px; padding: 20px 16px; text-align: center; color: #6D28D9; font-size: 12px; line-height: 1.5; }
+.ll-empty-card strong { display: block; color: #5B21B6; font-weight: 500; margin-bottom: 4px; }
+
+.ll-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #FFFCF8 0%, #FAFAF9 100%); border-radius: 12px; border: 0.5px solid var(--border); }
+.ll-empty, .ll-loading { color: var(--text-tertiary); font-size: 13px; font-style: italic; padding: 8px 0; margin: 0; }
+.ll-error { color: #b91c1c; font-size: 13px; padding: 8px 0; margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.ll-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 14px 0 0; padding-top: 14px; border-top: 0.5px solid var(--border); }
+.ll-legend-item { display: flex; align-items: center; gap: 6px; }
+.ll-legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+@media (max-width: 1024px) { .ll-three-col { grid-template-columns: 1fr 1fr; } .ll-perf-aggregate { grid-template-columns: repeat(2, 1fr); } .ll-patterns { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { body { padding: 20px; } .ll-metrics { grid-template-columns: repeat(2, 1fr); } .ll-three-col { grid-template-columns: 1fr; } .ll-perf-aggregate { grid-template-columns: 1fr; } .ll-perf-table th:nth-child(n+5), .ll-perf-table td:nth-child(n+5) { display: none; } .ll-dow-grid { grid-template-columns: repeat(4, 1fr); } }
+</style>
+</head>
+<body>
+<h2 class="sr-only">LinkedIn loop status dashboard.</h2>
+
+<div class="ll-root">
+  <div class="ll-header">
+    <div class="ll-title-block">
+      <span class="ll-title-bar"></span>
+      <div class="ll-title-text">
+        <h1>LinkedIn loop</h1>
+        <p id="ll-status">Loading status from NeuralFlow...</p>
+      </div>
+    </div>
+    <button id="ll-refresh" class="ll-btn">Refresh</button>
+  </div>
+
+  <div id="ll-stale-banner" class="ll-banner hidden">
+    <span><strong>Voice samples are stale</strong> — <span id="ll-stale-detail"></span>. Drafts will start drifting toward generic tone.</span>
+    <button class="ll-btn sm" data-prompt="Help me update voice-samples.md — pick 2 of my best recent posts to refresh the voice anchors">Refresh samples ↗</button>
+  </div>
+
+  <div class="ll-today" id="ll-today-card">
+    <div class="ll-today-head">
+      <h2>Today's post</h2>
+      <span class="ll-today-day" id="ll-today-day">Loading...</span>
+    </div>
+    <div id="ll-today-body"><p class="ll-loading">Looking for today's draft...</p></div>
+  </div>
+
+  <div class="ll-metrics">
+    <div class="ll-metric tint-blue"><p class="ll-metric-label">Pending briefs</p><p class="ll-metric-value" id="ll-m-pending">&mdash;</p><p class="ll-metric-sub" id="ll-m-pending-sub">in inbox</p></div>
+    <div class="ll-metric tint-green"><p class="ll-metric-label">Drafts queued</p><p class="ll-metric-value" id="ll-m-drafts">&mdash;</p><p class="ll-metric-sub">total in folder</p></div>
+    <div class="ll-metric tint-orange" id="ll-m-wedbank-card"><p class="ll-metric-label">CCW bank</p><p class="ll-metric-value" id="ll-m-wedbank">&mdash;</p><p class="ll-metric-sub" id="ll-m-wedbank-sub">topics ready</p></div>
+    <div class="ll-metric tint-amber"><p class="ll-metric-label">Until next sweep</p><p class="ll-metric-value" id="ll-m-countdown">&mdash;</p><p class="ll-metric-sub">Sunday 4 PM PT</p></div>
+  </div>
+
+  <div class="ll-card accent-navy">
+    <h3>This week</h3>
+    <div class="ll-week" id="ll-week"></div>
+    <div class="ll-legend">
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#CCFBF1;"></span>Educational</span>
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#DBEAFE;"></span>Build log</span>
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#FFEDD5;"></span>Claude Code Wed (CCW)</span>
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#EDE9FE;"></span>News</span>
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#DCFCE7;"></span>Founder</span>
+      <span class="ll-legend-item"><span class="ll-legend-swatch" style="background:#F3F4F6;"></span>Reflection</span>
+    </div>
+  </div>
+
+  <div class="ll-card accent-navy">
+    <h3>Day-0 Baseline <span class="ll-card-meta">snapshot &middot; 2026-04-26 &middot; pre-launch</span></h3>
+    <div class="ll-perf-aggregate">
+      <div class="ll-perf-mini tint-1"><p class="ll-perf-mini-label">Followers</p><p class="ll-perf-mini-value">3,174</p><p class="ll-perf-mini-sub">at launch</p></div>
+      <div class="ll-perf-mini tint-2"><p class="ll-perf-mini-label">Profile views</p><p class="ll-perf-mini-value">113</p><p class="ll-perf-mini-sub">last 7 days</p></div>
+      <div class="ll-perf-mini tint-3"><p class="ll-perf-mini-label">Post impressions</p><p class="ll-perf-mini-value">223</p><p class="ll-perf-mini-sub">last 7 days</p></div>
+      <div class="ll-perf-mini tint-4"><p class="ll-perf-mini-label">Pre-loop reach</p><p class="ll-perf-mini-value">~202</p><p class="ll-perf-mini-sub">median per post (n=3)</p></div>
+    </div>
+    <p style="font-size: 12px; color: var(--text-tertiary); margin: 12px 0 0; line-height: 1.5;">Captured Sun Apr 26, 2026 via Claude in Chrome &mdash; the &ldquo;before&rdquo; reading. Pre-launch, sporadic posting, no follow-up, no system. Stays frozen as the loop fills in the &ldquo;after&rdquo; above.</p>
+  </div>
+
+  <div class="ll-three-col">
+    <div class="ll-card accent-blue"><h3>Pending briefs</h3><div id="ll-briefs" class="ll-list"><p class="ll-loading">Reading inbox.md...</p></div></div>
+    <div class="ll-card accent-orange"><h3>Next Claude Code Wednesdays <span class="ll-card-meta">(CCW)</span></h3><div id="ll-wedtopics" class="ll-list"><p class="ll-loading">Reading topic bank...</p></div></div>
+    <div class="ll-card accent-teal"><h3>Recent sweeps</h3><div id="ll-sweeps" class="ll-list"><p class="ll-loading">Reading sweep log...</p></div></div>
+  </div>
+
+  <div class="ll-card accent-blue">
+    <h3>Growth over time <span class="ll-card-meta" id="ll-growth-status">Building data...</span></h3>
+    <div class="ll-growth-legend">
+      <span class="ll-growth-legend-item"><span class="ll-growth-legend-swatch" style="background:#3B82F6;"></span>Cumulative followers gained</span>
+      <span class="ll-growth-legend-item"><span class="ll-growth-legend-swatch" style="background:#F26B3A;"></span>Daily impressions</span>
+    </div>
+    <div id="ll-growth-area"><div class="ll-growth-empty"><strong>Building data...</strong>Need ~7 published posts with logged metrics. Currently <span id="ll-growth-count">0</span>.</div></div>
+  </div>
+
+  <div class="ll-card accent-green">
+    <h3>Recent post performance <span class="ll-card-meta" id="ll-perf-status">Reading performance-log.md...</span></h3>
+    <div class="ll-perf-aggregate">
+      <div class="ll-perf-mini tint-1"><p class="ll-perf-mini-label">Posts (this week)</p><p class="ll-perf-mini-value" id="ll-perf-count">&mdash;</p><p class="ll-perf-mini-sub">last 7 days</p></div>
+      <div class="ll-perf-mini tint-2"><p class="ll-perf-mini-label">Total impressions</p><p class="ll-perf-mini-value" id="ll-perf-imp">&mdash;</p><p class="ll-perf-mini-sub">D7 sum</p></div>
+      <div class="ll-perf-mini tint-3"><p class="ll-perf-mini-label">Avg engagement rate</p><p class="ll-perf-mini-value" id="ll-perf-eng">&mdash;</p><p class="ll-perf-mini-sub">across this week</p></div>
+      <div class="ll-perf-mini tint-4"><p class="ll-perf-mini-label">Top performer</p><p class="ll-perf-mini-value" id="ll-perf-top" style="font-size: 13px; line-height: 1.25;">&mdash;</p><p class="ll-perf-mini-sub" id="ll-perf-top-sub"></p></div>
+    </div>
+    <div id="ll-perf-table-wrap"><p class="ll-loading">Reading performance-log.md...</p></div>
+    <p class="ll-perf-hint" id="ll-perf-hint" style="display: none;">Click a row to ask Claude for a full breakdown of that post</p>
+  </div>
+
+  <div class="ll-card accent-purple">
+    <h3>Patterns <span class="ll-card-meta" id="ll-patterns-status">Need 20+ posts logged</span></h3>
+    <div class="ll-patterns" id="ll-patterns-area">
+      <div class="ll-patterns-section">
+        <h4>Hook archetype performance</h4>
+        <div id="ll-hook-heatmap"><div class="ll-empty-card"><strong>Building patterns...</strong>Need 20+ posts before hook archetypes are meaningful.</div></div>
+      </div>
+      <div class="ll-patterns-section">
+        <h4>Best day-of-week</h4>
+        <div id="ll-dow-heatmap"><div class="ll-empty-card"><strong>Building patterns...</strong>Need 20+ posts before day-of-week patterns are meaningful.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ll-actions">
+    <button class="ll-btn primary" data-prompt="Run my LinkedIn loop now">Run loop now &#8599;</button>
+    <button class="ll-btn btn-blue" data-prompt="Add a new brief to my LinkedIn inbox">Add brief &#8599;</button>
+    <button class="ll-btn btn-green" data-prompt="Open the drafts folder and summarize what is queued for this week">View drafts &#8599;</button>
+    <button class="ll-btn btn-amber" data-prompt="Fetch the latest LinkedIn metrics for my recent posts and update performance-log.md following the prompt in fetch-metrics-prompt.md.">Fetch metrics &#8599;</button>
+    <button class="ll-btn btn-orange-ghost" data-prompt="Refill the Claude Code Wednesdays (CCW) topic bank with 5 new advanced topics">Refill CCW bank &#8599;</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<script>
+(function(){
+  // === EDIT TO MATCH YOUR VAULT FOLDER NAME ===
+  var VAULT_FOLDER = 'LinkedIn_Strategy';
+  var INBOX_SLUG = VAULT_FOLDER + '/inbox';
+  var TOPIC_BANK_SLUG = VAULT_FOLDER + '/wednesday-topic-bank';
+  var SWEEP_LOG_SLUG = VAULT_FOLDER + '/drafts/_sweep-log';
+  var DRAFT_PREFIX = VAULT_FOLDER + '/drafts/';
+  var PERF_LOG_SLUG = VAULT_FOLDER + '/performance-log';
+  var VOICE_SAMPLES_SLUG = VAULT_FOLDER + '/voice-samples';
+  // =============================================
+
+  var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var DAY_FULL = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var PILLARS = { Mon:'Educational', Tue:'Build log', Wed:'Claude Code Wed', Thu:'News', Fri:'Founder', Sat:'Build / Edu', Sun:'Reflection' };
+  var PILLAR_CLASSES = { Mon:'pillar-p5', Tue:'pillar-p1', Wed:'pillar-cc', Thu:'pillar-p3', Fri:'pillar-p4', Sat:'pillar-p1', Sun:'pillar-personal' };
+  var growthChart = null;
+
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+  function nextSundayPT(){var n=new Date(),d=n.getDay(),t=new Date(n);if(d===0&&n.getHours()<16){t.setHours(16,0,0,0);}else{var u=(7-d)%7||7;t.setDate(n.getDate()+u);t.setHours(16,0,0,0);}return t;}
+  function formatCountdown(t){var n=new Date(),f=Math.max(0,t-n);var d=Math.floor(f/86400000);f-=d*86400000;var h=Math.floor(f/3600000);f-=h*3600000;var m=Math.floor(f/60000);if(d>=1)return d+'d '+h+'h';if(h>=1)return h+'h '+m+'m';return m+'m';}
+  function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function todayDayName(){return DAY_FULL[new Date().getDay()];}
+  function thisWeekDates(){var t=new Date(),w=t.getDay(),m=new Date(t),o=w===0?-6:1-w;m.setDate(t.getDate()+o);m.setHours(0,0,0,0);return DAYS.map(function(_,i){var d=new Date(m);d.setDate(m.getDate()+i);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');});}
+  function renderWeekSkeleton(dates){var el=document.getElementById('ll-week');if(!el)return;el.innerHTML=DAYS.map(function(d,i){return '<div class="ll-day '+PILLAR_CLASSES[d]+'"><p class="ll-day-name">'+d+'</p><p class="ll-day-pillar">'+PILLARS[d]+'</p><p class="ll-day-status" data-day-status="'+d+'">'+dates[i].slice(5)+'</p></div>';}).join('');}
+  function callMcp(name,args){if(!window.cowork||typeof window.cowork.callMcpTool!=='function')return Promise.reject(new Error('MCP unavailable'));return window.cowork.callMcpTool(name,args).then(function(r){if(typeof r==='string')return r;if(r&&Array.isArray(r.content)&&r.content[0])return r.content[0].text||'';if(r&&r.text)return r.text;return JSON.stringify(r);});}
+  function getBody(t){var i=t.indexOf('--- body ---');return i>=0?t.slice(i+12).trim():t;}
+  function getFrontmatter(t){var i=t.indexOf('--- frontmatter ---'),j=t.indexOf('--- body ---');if(i<0||j<0)return {};var fm={};t.slice(i+19,j).trim().split('\n').forEach(function(l){var m=l.match(/^(\w+):\s*"?([^"]*)"?\s*$/);if(m)fm[m[1].trim()]=m[2].trim();});return fm;}
+  function getSection(b,h){var l=b.split('\n'),o=[],s=false;for(var i=0;i<l.length;i++){var x=l[i];if(x.indexOf('## ')===0){if(s)break;if(x.slice(3).trim().toLowerCase()===h.toLowerCase()){s=true;continue;}}if(s)o.push(x);}return o.join('\n');}
+  function parseStatusItems(s){if(!s)return [];var items=[],lines=s.split('\n'),cur=null;for(var i=0;i<lines.length;i++){var l=lines[i],m=l.match(/^### \[([ ~x!])\]\s*(.+)$/);if(m){if(cur)items.push(cur);cur={status:m[1],title:m[2].trim(),body:''};}else if(cur)cur.body+=l+'\n';}if(cur)items.push(cur);return items.map(function(it){return {status:it.status,title:it.title,body:it.body.trim()};});}
+  function parseSweepEntries(b){var lines=b.split('\n'),entries=[],cur=null;for(var i=0;i<lines.length;i++){var l=lines[i],m=l.match(/^## (.+)$/);if(m){if(cur)entries.push(cur);cur={header:m[1].trim(),body:''};}else if(cur)cur.body+=l+'\n';}if(cur)entries.push(cur);return entries.filter(function(e){return /\d{4}-\d{2}-\d{2}/.test(e.header);});}
+  function dayBadgeClass(d){var x=String(d).toLowerCase();if(['mon','tue','wed','thu','fri','sat','sun'].indexOf(x)>=0)return 'day-'+x;return 'day-auto';}
+
+  function parsePerfTable(body){var lines=body.split('\n');var headerIdx=-1;for(var i=0;i<lines.length;i++){if(lines[i].indexOf('|')===0&&lines[i].indexOf('Date')>=0&&lines[i].indexOf('Imp')>=0){headerIdx=i;break;}}if(headerIdx<0)return [];var headers=lines[headerIdx].split('|').slice(1,-1).map(function(s){return s.trim();});var rows=[];for(var j=headerIdx+2;j<lines.length;j++){var line=lines[j];if(line.indexOf('|')!==0)break;var cells=line.split('|').slice(1,-1).map(function(s){return s.trim();});if(cells.length===0)continue;if(cells[0]===''||cells[0].toLowerCase().indexOf('first publish')>=0)continue;var row={};for(var k=0;k<headers.length;k++)row[headers[k]]=cells[k]||'';rows.push(row);}return rows;}
+  function parseDraftSections(body){var sections={};var current=null;var lines=body.split('\n');var buf=[];for(var i=0;i<lines.length;i++){var line=lines[i];var m=line.match(/^## (?:Part |§ )([A-E])\b/);if(m){if(current)sections[current]=buf.join('\n').trim();current=m[1];buf=[];}else if(current&&!/^## ═/.test(line))buf.push(line);}if(current)sections[current]=buf.join('\n').trim();return sections;}
+  function getDraftHook(body){var m=body.match(/^# (.+)$/m);if(!m)return '';return m[1].replace(/\*\(.*?\)\*/g,'').trim();}
+  function num(v){var n=parseFloat(String(v).replace(/[,%]/g,''));return isNaN(n)?null:n;}
+  function fmtNum(n){if(n==null)return '—';if(n>=1000)return (n/1000).toFixed(1)+'k';return Math.round(n).toString();}
+  function gradeClass(g){var x=String(g||'').toUpperCase();if(x.indexOf('A')>=0)return 'aplus';if(x.indexOf('B')>=0)return 'bplus';if(x.indexOf('BOMB')>=0)return 'bomb';if(x==='C')return 'c';return 'pending';}
+  function copyText(text,btn){if(!navigator.clipboard){alert('Clipboard not available; copy manually:\n\n'+text);return;}navigator.clipboard.writeText(text).then(function(){var orig=btn.textContent;btn.textContent='Copied ✓';btn.classList.add('copied');setTimeout(function(){btn.textContent=orig;btn.classList.remove('copied');},2000);});}
+  function sendPromptText(t){if(typeof window.sendPrompt==='function')window.sendPrompt(t);else if(window.cowork&&typeof window.cowork.sendPrompt==='function')window.cowork.sendPrompt(t);else alert('Send prompt: '+t);}
+
+  function renderTodayPanel(draftSlugs){
+    var todayDate=todayStr();
+    document.getElementById('ll-today-day').textContent=todayDayName()+' · '+todayDate;
+    var todaySlug=draftSlugs.find(function(s){return s.indexOf(DRAFT_PREFIX+todayDate)===0;});
+    var bodyEl=document.getElementById('ll-today-body');
+    if(!todaySlug){bodyEl.innerHTML='<div class="ll-today-empty"><strong style="color: var(--text-primary); display: block; margin-bottom: 6px;">No draft for today.</strong>Run the loop or check tomorrow\'s slot.</div>';return;}
+    callMcp('mcp__neuralflow__read_note',{slug:todaySlug}).then(function(text){
+      var body=getBody(text);var hook=getDraftHook(body);var sections=parseDraftSections(body);var captionWithTags=sections.A||'';var firstComment=sections.C||'';var slug=todaySlug.split('/').pop();var html='';
+      if(hook)html+='<div class="ll-today-hook">'+escapeHtml(hook)+'</div>';
+      if(captionWithTags)html+='<div class="ll-today-section"><div class="ll-today-section-head"><span class="ll-today-label">Part A — caption + hashtags</span><button class="ll-btn sm" data-copy="caption">Copy</button></div><div class="ll-today-text">'+escapeHtml(captionWithTags)+'</div></div>';
+      if(firstComment)html+='<div class="ll-today-section"><div class="ll-today-section-head"><span class="ll-today-label">Part C — first comment (within 30s)</span><button class="ll-btn sm" data-copy="comment">Copy</button></div><div class="ll-today-text compact">'+escapeHtml(firstComment)+'</div></div>';
+      html+='<div class="ll-today-actions"><button class="ll-btn primary sm" data-mark="'+escapeHtml(slug)+'">Mark posted ✓</button><button class="ll-btn btn-blue sm" data-open-html="'+escapeHtml(slug.replace(/\.md$/,'.html'))+'">Open carousel HTML ↗</button><button class="ll-btn btn-green sm" data-open-md="'+escapeHtml(slug)+'">Edit draft .md ↗</button></div>';
+      bodyEl.innerHTML=html;
+      var capBtn=bodyEl.querySelector('[data-copy="caption"]');if(capBtn)capBtn.addEventListener('click',function(){copyText(captionWithTags,capBtn);});
+      var comBtn=bodyEl.querySelector('[data-copy="comment"]');if(comBtn)comBtn.addEventListener('click',function(){copyText(firstComment,comBtn);});
+      var markBtn=bodyEl.querySelector('[data-mark]');if(markBtn)markBtn.addEventListener('click',function(){sendPromptText('Mark today\'s draft as published. Update the frontmatter status field in drafts/'+slug+' from "draft" to "published" and add a Day-0 row to performance-log.md with today\'s date and the post slug.');});
+      var ohBtn=bodyEl.querySelector('[data-open-html]');if(ohBtn)ohBtn.addEventListener('click',function(){sendPromptText('Open the carousel HTML for today\'s post: drafts/'+ohBtn.getAttribute('data-open-html')+' — open it in my browser so I can print to PDF.');});
+      var omBtn=bodyEl.querySelector('[data-open-md]');if(omBtn)omBtn.addEventListener('click',function(){sendPromptText('Open drafts/'+omBtn.getAttribute('data-open-md')+' so I can edit it.');});
+    }).catch(function(e){bodyEl.innerHTML='<p class="ll-error">Could not load today\'s draft: '+escapeHtml(e.message)+'</p>';});
+  }
+
+  function renderStalenessBanner(voiceText){var fm=getFrontmatter(voiceText);var updated=fm.updated;if(!updated)return;var d=new Date(updated);if(isNaN(d))return;var daysAgo=Math.floor((new Date()-d)/86400000);var b=document.getElementById('ll-stale-banner'),det=document.getElementById('ll-stale-detail');if(daysAgo>60){det.textContent='Last updated '+daysAgo+' days ago ('+updated+')';b.classList.remove('hidden');}else b.classList.add('hidden');}
+
+  function renderGrowth(rows){var statusEl=document.getElementById('ll-growth-status');var area=document.getElementById('ll-growth-area');var loggedCount=rows.filter(function(r){return r['Date']&&(num(r['Imp D7'])!=null||num(r['Imp D2'])!=null);}).length;if(loggedCount<7){statusEl.textContent='Building data — '+loggedCount+' / 7 posts logged';area.innerHTML='<div class="ll-growth-empty"><strong>Building data...</strong>Need ~7 published posts with logged metrics. Currently <span id="ll-growth-count">'+loggedCount+'</span>.</div>';return;}statusEl.textContent='Last 30 days · cumulative followers + daily impressions';area.innerHTML='<div class="ll-growth-wrap"><canvas id="ll-growth-canvas" role="img" aria-label="Cumulative followers and daily impressions over the last 30 days"></canvas></div>';var today=new Date();today.setHours(0,0,0,0);var labels=[];var dayMap={};for(var i=29;i>=0;i--){var d=new Date(today);d.setDate(today.getDate()-i);var key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');labels.push(key.slice(5));dayMap[key]={followers:0,impressions:0};}rows.forEach(function(r){var key=(r['Date']||'').trim();if(!dayMap[key])return;dayMap[key].followers+=num(r['Followers gained'])||0;dayMap[key].impressions+=num(r['Imp D7'])||num(r['Imp D2'])||0;});var cum=[];var imp=[];var run=0;Object.keys(dayMap).sort().forEach(function(k){run+=dayMap[k].followers;cum.push(run);imp.push(dayMap[k].impressions);});var ctx=document.getElementById('ll-growth-canvas').getContext('2d');if(growthChart)growthChart.destroy();growthChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:'Cumulative followers gained',data:cum,borderColor:'#3B82F6',backgroundColor:'rgba(59,130,246,0.1)',borderWidth:2,tension:0.3,pointRadius:3,pointHoverRadius:5,fill:true,yAxisID:'y'},{label:'Daily impressions',data:imp,borderColor:'#F26B3A',backgroundColor:'rgba(242,107,58,0.0)',borderWidth:2,borderDash:[4,3],tension:0.3,pointRadius:2,pointHoverRadius:5,fill:false,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'#0A2540',padding:10}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#9ca3af',maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{position:'left',grid:{color:'#f3f4f6'},ticks:{font:{size:10},color:'#3B82F6',precision:0},title:{display:true,text:'Followers (cum.)',font:{size:11},color:'#3B82F6'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:10},color:'#F26B3A',callback:function(v){return v>=1000?(v/1000).toFixed(1)+'k':v;}},title:{display:true,text:'Impressions (daily)',font:{size:11},color:'#F26B3A'}}}}});}
+
+  function renderPerformance(rows){var perfStatus=document.getElementById('ll-perf-status');var wrap=document.getElementById('ll-perf-table-wrap');var hint=document.getElementById('ll-perf-hint');if(!rows||rows.length===0){perfStatus.textContent='No posts logged yet.';wrap.innerHTML='<div class="ll-empty-card" style="background: linear-gradient(135deg, #F0FDF4 0%, #FAFAFA 100%); border-color: #BBF7D0; color: #15803D;"><strong style="color: #14532D;">No posts logged yet</strong>First post will appear here once you log it. Use the "Fetch metrics" button or paste from LinkedIn analytics manually.</div>';['ll-perf-count','ll-perf-imp','ll-perf-eng','ll-perf-top'].forEach(function(id){document.getElementById(id).textContent='—';});document.getElementById('ll-perf-top-sub').textContent='';hint.style.display='none';return;}perfStatus.textContent=rows.length+' total post'+(rows.length===1?'':'s')+' logged';var today=new Date();today.setHours(0,0,0,0);var weekAgo=new Date(today);weekAgo.setDate(today.getDate()-7);var thisWeek=rows.filter(function(r){var d=new Date(r['Date']);return !isNaN(d)&&d>=weekAgo&&d<=today;});var totalImp=thisWeek.reduce(function(s,r){return s+(num(r['Imp D7'])||num(r['Imp D2'])||0);},0);var er=thisWeek.map(function(r){return num(r['Eng rate %']);}).filter(function(x){return x!=null;});var avgEng=er.length?er.reduce(function(a,b){return a+b;},0)/er.length:null;var top=thisWeek.slice().sort(function(a,b){return (num(b['Eng rate %'])||0)-(num(a['Eng rate %'])||0);})[0];document.getElementById('ll-perf-count').textContent=thisWeek.length;document.getElementById('ll-perf-imp').textContent=totalImp?fmtNum(totalImp):'—';document.getElementById('ll-perf-eng').textContent=avgEng!=null?avgEng.toFixed(1)+'%':'—';if(top){var t=(top['Post']||'').replace(/\[\[|\]\]/g,'').split('/').pop().replace(/^\d{4}-\d{2}-\d{2}-/,'').replace(/-/g,' ');document.getElementById('ll-perf-top').textContent=t.length>32?t.slice(0,30)+'…':t;var tr=num(top['Eng rate %']);document.getElementById('ll-perf-top-sub').textContent=tr!=null?tr.toFixed(1)+'% engagement':'';}else{document.getElementById('ll-perf-top').textContent='—';document.getElementById('ll-perf-top-sub').textContent='';}var recent=rows.slice().sort(function(a,b){return (b['Date']||'').localeCompare(a['Date']||'');}).slice(0,5);var table='<table class="ll-perf-table"><thead><tr><th>Date</th><th>Post</th><th class="ll-perf-num">Imp D7</th><th class="ll-perf-num">Likes</th><th class="ll-perf-num">Comments</th><th class="ll-perf-num">Saves</th><th class="ll-perf-num">DMs</th><th class="ll-perf-num">Eng %</th><th>Grade</th></tr></thead><tbody>';recent.forEach(function(r){var raw=(r['Post']||'').replace(/\[\[|\]\]/g,'').split('/').pop().replace(/\.md$/,'');var slug=raw.replace(/^\d{4}-\d{2}-\d{2}-/,'').replace(/-/g,' ');var imp=num(r['Imp D7']);var imps=imp!=null?fmtNum(imp):(num(r['Imp D2'])!=null?fmtNum(num(r['Imp D2']))+' (D2)':'—');var er2=num(r['Eng rate %']);var grade=(r['Grade']||'').trim()||'pending';table+='<tr class="clickable" data-post-slug="'+escapeHtml(raw)+'"><td>'+escapeHtml(r['Date']||'')+'</td><td><div class="ll-perf-title">'+escapeHtml(slug.length>50?slug.slice(0,48)+'…':slug)+'</div></td><td class="ll-perf-num">'+escapeHtml(imps)+'</td><td class="ll-perf-num">'+escapeHtml(r['Likes']||'—')+'</td><td class="ll-perf-num">'+escapeHtml(r['Comments']||'—')+'</td><td class="ll-perf-num">'+escapeHtml(r['Saves']||'—')+'</td><td class="ll-perf-num">'+escapeHtml(r['DMs']||'—')+'</td><td class="ll-perf-num">'+(er2!=null?er2.toFixed(1)+'%':'—')+'</td><td><span class="ll-perf-grade '+gradeClass(grade)+'">'+escapeHtml(grade)+'</span></td></tr>';});table+='</tbody></table>';wrap.innerHTML=table;hint.style.display='block';wrap.querySelectorAll('tr.clickable').forEach(function(row){row.addEventListener('click',function(){var slug=row.getAttribute('data-post-slug');sendPromptText('Show me the full breakdown for the post drafts/'+slug+'.md — read the draft, pull its row from performance-log.md, compare its metrics to my baseline, and tell me what worked / what didn\'t.');});});}
+
+  function dowColor(intensity){var stops=[[250,245,255],[221,214,254],[167,139,250],[139,92,246],[109,40,217]];var idx=intensity*(stops.length-1);var i=Math.floor(idx);var t=idx-i;if(i>=stops.length-1)return 'rgb('+stops[stops.length-1].join(',')+')';var a=stops[i],b=stops[i+1];return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')';}
+  function dowTextColor(intensity){return intensity>0.55?'#fff':'#5B21B6';}
+
+  function renderPatterns(rows){var statusEl=document.getElementById('ll-patterns-status');var hookEl=document.getElementById('ll-hook-heatmap');var dowEl=document.getElementById('ll-dow-heatmap');var logged=rows.filter(function(r){return r['Date']&&num(r['Eng rate %'])!=null;});if(logged.length<20){statusEl.textContent='Need 20+ posts logged · currently '+logged.length;hookEl.innerHTML='<div class="ll-empty-card"><strong>Building patterns...</strong>Need 20+ posts. Currently '+logged.length+'.</div>';dowEl.innerHTML='<div class="ll-empty-card"><strong>Building patterns...</strong>Need 20+ posts. Currently '+logged.length+'.</div>';return;}statusEl.textContent='Computed from '+logged.length+' posts';var hg={};logged.forEach(function(r){var h=(r['Hook']||'').toLowerCase().trim()||'unknown';if(!hg[h])hg[h]={sum:0,count:0};hg[h].sum+=num(r['Eng rate %'])||0;hg[h].count++;});var hl=Object.keys(hg).map(function(h){return {name:h,avg:hg[h].sum/hg[h].count,count:hg[h].count};}).sort(function(a,b){return b.avg-a.avg;});var maxR=Math.max.apply(null,hl.map(function(h){return h.avg;}));hookEl.innerHTML='<div class="ll-hook-list">'+hl.map(function(h){var pct=(h.avg/maxR)*100;return '<div class="ll-hook-row"><span class="ll-hook-name">'+escapeHtml(h.name)+' <span style="color: var(--text-tertiary); font-weight: 400; font-size: 11px;">('+h.count+')</span></span><div class="ll-hook-bar-bg"><div class="ll-hook-bar" style="width:'+pct.toFixed(0)+'%;"></div></div><span class="ll-hook-rate">'+h.avg.toFixed(1)+'%</span></div>';}).join('')+'</div>';var dg={};DAYS.forEach(function(d){dg[d]={sum:0,count:0};});logged.forEach(function(r){var d=new Date(r['Date']);if(isNaN(d))return;var dn=DAY_FULL[d.getDay()];dg[dn].sum+=num(r['Eng rate %'])||0;dg[dn].count++;});var dl=DAYS.map(function(d){var g=dg[d];return {day:d,avg:g.count?g.sum/g.count:null,count:g.count};});var maxD=Math.max.apply(null,dl.map(function(d){return d.avg||0;}));dowEl.innerHTML='<div class="ll-dow-grid">'+dl.map(function(d){if(d.avg==null)return '<div class="ll-dow-cell" style="opacity:0.4; background:#F3F4F6;"><div class="ll-dow-name">'+d.day+'</div><div class="ll-dow-rate" style="color: var(--text-tertiary);">—</div><div class="ll-dow-count">no data</div></div>';var inten=maxD>0?d.avg/maxD:0;var bg=dowColor(inten);var fg=dowTextColor(inten);return '<div class="ll-dow-cell" style="background:'+bg+';"><div class="ll-dow-name" style="color:'+fg+';opacity:0.85;">'+d.day+'</div><div class="ll-dow-rate" style="color:'+fg+';">'+d.avg.toFixed(1)+'%</div><div class="ll-dow-count" style="color:'+fg+';">'+d.count+' post'+(d.count===1?'':'s')+'</div></div>';}).join('')+'</div>';}
+
+  function loadAll(){
+    var weekDates=thisWeekDates();renderWeekSkeleton(weekDates);
+    document.getElementById('ll-m-countdown').textContent=formatCountdown(nextSundayPT());
+    document.getElementById('ll-status').textContent='Refreshing from NeuralFlow...';
+    return Promise.all([
+      callMcp('mcp__neuralflow__read_note',{slug:INBOX_SLUG}).catch(function(){return '';}),
+      callMcp('mcp__neuralflow__read_note',{slug:TOPIC_BANK_SLUG}).catch(function(){return '';}),
+      callMcp('mcp__neuralflow__read_note',{slug:SWEEP_LOG_SLUG}).catch(function(){return '';}),
+      callMcp('mcp__neuralflow__list_recent_notes',{limit:50}).catch(function(){return '';}),
+      callMcp('mcp__neuralflow__read_note',{slug:PERF_LOG_SLUG}).catch(function(){return '';}),
+      callMcp('mcp__neuralflow__read_note',{slug:VOICE_SAMPLES_SLUG}).catch(function(){return '';})
+    ]).then(function(r){
+      var inboxBody=getBody(r[0]);
+      var pending=parseStatusItems(getSection(inboxBody,'Pending')).filter(function(i){return i.status===' ';});
+      var blocked=parseStatusItems(getSection(inboxBody,'Blocked')).filter(function(i){return i.status==='!';});
+      document.getElementById('ll-m-pending').textContent=pending.length;
+      document.getElementById('ll-m-pending-sub').textContent=blocked.length===0?'in inbox':blocked.length+' blocked';
+      var briefsEl=document.getElementById('ll-briefs');
+      if(pending.length===0)briefsEl.innerHTML='<div class="ll-empty-card" style="background: linear-gradient(135deg, #EFF6FF 0%, #FAFAFF 100%); border-color: #BFDBFE; color: #1E40AF;"><strong style="color: #1E3A8A;">Inbox is empty</strong>Drop a brief in inbox.md to fill the pipeline.</div>';
+      else briefsEl.innerHTML=pending.slice(0,6).map(function(b){var t=(b.body.match(/target day:\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i)||[])[1]||'auto';var p=(b.body.match(/pillar:\s*([\w-]+)/i)||[])[1]||'auto';return '<div class="ll-list-item"><p class="ll-item-title"><span class="ll-badge '+dayBadgeClass(t)+'">'+escapeHtml(t)+'</span>'+escapeHtml(b.title)+'</p><p class="ll-item-meta">'+escapeHtml(p)+'</p></div>';}).join('')+(pending.length>6?'<p class="ll-item-meta" style="margin-top:8px;">+ '+(pending.length-6)+' more</p>':'');
+
+      var wedBody=getBody(r[1]);var wedItems=parseStatusItems(getSection(wedBody,'Pending topics')).filter(function(i){return i.status===' ';});
+      document.getElementById('ll-m-wedbank').textContent=wedItems.length;
+      var wc=document.getElementById('ll-m-wedbank-card'),ws=document.getElementById('ll-m-wedbank-sub');
+      if(wedItems.length<4){wc.classList.add('warn');ws.textContent='refill needed';}else{wc.classList.remove('warn');ws.textContent='topics ready';}
+      var wedListEl=document.getElementById('ll-wedtopics');
+      if(wedItems.length===0)wedListEl.innerHTML='<div class="ll-empty-card" style="background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%); border-color: #FED7AA; color: #9A3412;"><strong style="color: #7C2D12;">Bank is empty</strong>Click "Refill CCW bank" below.</div>';
+      else { wedListEl.innerHTML=wedItems.slice(0,6).map(function(t){var m=t.title.match(/^(CCW#\d+)\s*[—\-]\s*(.+)$/);var badge=m?m[1]:'CCW';var title=m?m[2]:t.title;return '<div class="ll-list-item ll-ccw-row"><p class="ll-item-title"><span class="ll-badge ccw">'+escapeHtml(badge)+'</span>'+escapeHtml(title)+'</p>'+(m?'<button class="ll-ccw-mark" data-ccw="'+escapeHtml(badge)+'" title="Mark this CCW topic as drafted in wednesday-topic-bank.md">Mark drafted ✓</button>':'')+'</div>';}).join('');
+      wedListEl.querySelectorAll('.ll-ccw-mark').forEach(function(btn){btn.addEventListener('click',function(){var ccw=btn.getAttribute('data-ccw');var n=ccw.replace('CCW#','');sendPromptText('Mark '+ccw+' as drafted in wednesday-topic-bank.md.\n\nSteps: (1) Find the corresponding draft in LinkedIn_Strategy/drafts/ — look for a file matching *claude-code-wednesdays-'+n+'*.md or the most recent Wednesday draft. If unclear, ask me which file to link. (2) Edit wednesday-topic-bank.md: change the '+ccw+' entry from `[ ]` to `[x]`, append " — drafted "+today\'s date, and add a wikilink line "→ [[drafts/<filename>]]" beneath the title. (3) Confirm to me with the file paths you updated.');});});}
+
+      var sweepBody=getBody(r[2]),sweeps=parseSweepEntries(sweepBody);
+      var sweepEl=document.getElementById('ll-sweeps');
+      if(sweeps.length===0)sweepEl.innerHTML='<div class="ll-empty-card" style="background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%); border-color: #A7F3D0; color: #047857;"><strong style="color: #064E3B;">No sweeps yet</strong>First scheduled run is Sunday 4 PM PT.</div>';
+      else sweepEl.innerHTML=sweeps.slice(0,4).map(function(s){var d=(s.body.match(/Drafted:\s*(\d+)/)||[])[1]||'?';var b=(s.body.match(/Blocked:\s*(\d+)/)||[])[1]||'0';return '<div class="ll-list-item"><div class="ll-sweep-row"><span class="ll-sweep-dot"></span><div><p class="ll-item-title">'+escapeHtml(s.header)+'</p><p class="ll-item-meta">'+d+' drafted &middot; '+b+' blocked</p></div></div></div>';}).join('');
+
+      var draftSlugs=(r[3].match(/\[\[([^\]]+)\]\]/g)||[]).map(function(s){return s.slice(2,-2);}).filter(function(s){return s.indexOf(DRAFT_PREFIX)===0&&s.indexOf('_sweep-log')===-1;});
+      document.getElementById('ll-m-drafts').textContent=draftSlugs.length;
+      var draftDates={};draftSlugs.forEach(function(s){var m=s.match(/(\d{4}-\d{2}-\d{2})/);if(m)draftDates[m[1]]=true;});
+      weekDates.forEach(function(d,i){var name=DAYS[i],c=document.querySelector('[data-day-status="'+name+'"]');if(!c)return;if(draftDates[d]){c.className='ll-day-status done';c.textContent='drafted';}else{c.className='ll-day-status';c.textContent=d.slice(5);}});
+
+      renderTodayPanel(draftSlugs);
+      renderStalenessBanner(r[5]);
+      var perfBody=getBody(r[4]);var perfRows=parsePerfTable(perfBody);
+      renderGrowth(perfRows);renderPerformance(perfRows);renderPatterns(perfRows);
+      document.getElementById('ll-status').textContent='Last sweep: '+(sweeps[0]?sweeps[0].header:'never run');
+    }).catch(function(e){document.getElementById('ll-status').innerHTML='<span class="ll-error">'+escapeHtml(e.message)+'</span>';});
+  }
+  document.getElementById('ll-refresh').addEventListener('click',function(){var b=document.getElementById('ll-refresh');b.disabled=true;loadAll().finally(function(){b.disabled=false;});});
+  document.querySelectorAll('[data-prompt]').forEach(function(b){b.addEventListener('click',function(){sendPromptText(b.getAttribute('data-prompt'));});});
+  setInterval(function(){var t=nextSundayPT(),el=document.getElementById('ll-m-countdown');if(el)el.textContent=formatCountdown(t);},60000);
+  loadAll();
+})();
+</script>
+</body>
+</html>
