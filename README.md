@@ -43,7 +43,7 @@ It's not "AI writes my posts." It's "AI removes the blank page so my voice, my r
 
 ## What you'll need
 
-- **NeuralFlow** (free) — markdown-native second brain that holds the playbook, inbox, drafts. The MCP server is what lets Claude read and write to it.
+- **NeuralFlow** — markdown-native second brain that holds the playbook, inbox, drafts. **The free local app includes the MCP server** (what lets Claude read and write to your notes) — and that's all the loop needs. AI features and Cloud Sync are paid tiers if you want them, but the loop runs fine without either.
   → https://neuralflow.run *(disclosure: I built NeuralFlow. Solo project, still shipping.)*
 - **Claude Cowork** — desktop app for non-developer Claude workflows. Where the scheduled Sunday task runs.
 - A LinkedIn account

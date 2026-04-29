@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "node ~/.claude/hooks/dangerous-cmd-guard.js",
+        "blocking": true
+      }
+    ]
+  }
+}
